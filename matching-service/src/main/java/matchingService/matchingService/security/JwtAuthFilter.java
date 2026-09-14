@@ -24,8 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Value("${jwt.secret}")
     private String secret;
-
-    @Override
+@Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
@@ -43,7 +42,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 String email = claims.getSubject();
                 String role = claims.get("role", String.class);
-                Long userId = claims.get("userId", Long.class);
+                
+                // ✅ Safe Number extraction to prevent ClassCastException:
+                Long userId = null;
+                Object userIdObj = claims.get("userId");
+                if (userIdObj instanceof Number num) {
+                    userId = num.longValue();
+                } else if (userIdObj instanceof String str) {
+                    userId = Long.parseLong(str);
+                }
 
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
