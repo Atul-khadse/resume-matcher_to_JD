@@ -1,18 +1,49 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:8080';
 
-const client = axios.create({
-  // baseURL: API_BASE,
-  baseURL: 'http://localhost:8080', 
+
+
+const rawBaseUrl = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:8080';
+// Ensures the base URL always ends with /api/v1 without double slashes
+const normalizedBaseUrl = rawBaseUrl.replace(/\/+$/, '');
+const baseURL = normalizedBaseUrl.endsWith('/api/v1') 
+    ? normalizedBaseUrl 
+    : `${normalizedBaseUrl}/api/v1`;
+
+const api = axios.create({
+  baseURL: baseURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+
+
+
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('email');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
-export default client;
+export default api;
