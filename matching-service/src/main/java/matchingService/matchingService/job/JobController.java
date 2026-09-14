@@ -15,21 +15,35 @@ import java.util.List;
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
 public class JobController {
-
     private final JobService jobService;
 
     @PostMapping
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<Job> createJob(@Valid @RequestBody JobRequest request, Authentication auth) {
-        Long recruiterId = (Long) auth.getDetails();
+    public ResponseEntity<?> createJob(
+            @Valid @RequestBody JobRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) Long recruiterId,
+            @RequestHeader(value = "X-User-Role", defaultValue = "") String role) {
+
+        if (recruiterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Missing user identity header from Gateway");
+        }
+
+        // Validate role forwarded from Gateway JWT claims
+        if (!"RECRUITER".equalsIgnoreCase(role) && !"ROLE_RECRUITER".equalsIgnoreCase(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Only recruiters can post jobs");
+        }
+
         Job job = jobService.createJob(recruiterId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(job);
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<List<Job>> getMyJobs(Authentication auth) {
-        Long recruiterId = (Long) auth.getDetails();
+    public ResponseEntity<?> getMyJobs(@RequestHeader(value = "X-User-Id", required = false) Long recruiterId) {
+        if (recruiterId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Missing user identity header from Gateway");
+        }
         return ResponseEntity.ok(jobService.getJobsByRecruiter(recruiterId));
     }
 
