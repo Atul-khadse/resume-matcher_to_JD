@@ -1,5 +1,6 @@
 package matchingService.matchingService.job;
 
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import matchingService.matchingService.dto.JobRequest;
 import matchingService.matchingService.matching.AsyncMatchingService;
@@ -9,6 +10,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class JobService {
 
     private final JobRepository jobRepository;
@@ -24,7 +26,11 @@ public class JobService {
                 .build();
         Job saved = jobRepository.save(job);
         // Async background recalculation against existing resumes
+       try {
         asyncMatchingService.scoreJobAgainstAllResumes(saved.getId());
+    } catch (Exception e) {
+           log.error("Failed to start background scoring for job id {}: {}", saved.getId(), e.getMessage());
+    }
         return saved;
     }
 

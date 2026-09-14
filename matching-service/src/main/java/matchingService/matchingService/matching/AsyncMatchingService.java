@@ -1,6 +1,7 @@
 package matchingService.matchingService.matching;
 
 import lombok.RequiredArgsConstructor;
+
 import lombok.extern.slf4j.Slf4j;
 import matchingService.matchingService.job.Job;
 import matchingService.matchingService.job.JobRepository;
