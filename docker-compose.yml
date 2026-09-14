@@ -1,0 +1,85 @@
+
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: matcher-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Atul@123
+      MYSQL_DATABASE: resume_matcher_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pAtul@123"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: matcher-auth-service
+    restart: on-failure
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql-db
+      DB_PORT: 3306
+      DB_NAME: resume_matcher_db
+      DB_USER: root
+      DB_PASSWORD: Atul@123
+    ports:
+      - "8081:8081"
+
+  matching-service:
+    build:
+      context: ./matching-service
+      dockerfile: Dockerfile
+    container_name: matcher-matching-service
+    restart: on-failure
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql-db
+      DB_PORT: 3306
+      DB_NAME: resume_matcher_db
+      DB_USER: root
+      DB_PASSWORD: Atul@123
+    ports:
+      - "8082:8082"
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: matcher-gateway
+    restart: on-failure
+    depends_on:
+      - auth-service
+      - matching-service
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8081
+      MATCHING_SERVICE_URL: http://matching-service:8082
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: matcher-frontend
+    restart: on-failure
+    depends_on:
+      - gateway
+    ports:
+      - "3000:80"
+
+volumes:
+  mysql_data:
