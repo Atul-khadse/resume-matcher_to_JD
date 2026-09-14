@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:8080';
+const baseURL = import.meta.env.VITE_GATEWAY_URL || 'https://gateway-4oxc.onrender.com';
 
 const client = axios.create({
   // baseURL: API_BASE,
