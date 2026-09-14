@@ -1,14 +1,7 @@
 import axios from 'axios';
 
-
-
-
 const rawBaseUrl = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:8080';
-// Ensures the base URL always ends with /api/v1 without double slashes
-const normalizedBaseUrl = rawBaseUrl.replace(/\/+$/, '');
-const baseURL = normalizedBaseUrl.endsWith('/api/v1') 
-    ? normalizedBaseUrl 
-    : `${normalizedBaseUrl}/api/v1`;
+const baseURL = rawBaseUrl.replace(/\/+$/, ''); // Just strip trailing slashes
 
 const api = axios.create({
   baseURL: baseURL,
@@ -16,10 +9,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-
-
-
 
 api.interceptors.request.use(
   (config) => {
